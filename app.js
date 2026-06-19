@@ -263,15 +263,10 @@ _For queries: ${CONFIG.phone1}_`;
   },
 
   buildMagicLinkText: async (bill) => {
-    const data = {
-      config: { currency: CONFIG.currency, address: CONFIG.address, phone1: CONFIG.phone1, phone2: CONFIG.phone2 },
-      ...bill
-    };
-    // Make base64 perfectly URL-safe so WhatsApp NEVER truncates it
-    let b64 = btoa(encodeURIComponent(JSON.stringify(data)));
-    b64 = b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    // Generate an extremely compressed URL-safe string
+    const compressed = LZString.compressToEncodedURIComponent(JSON.stringify(bill));
     
-    const brandedLink = `https://riwaaz-website.vercel.app/bill?data=${b64}`;
+    const brandedLink = `https://riwaaz-website.vercel.app/bill?data=${compressed}`;
     
     return `Hi! Your bill from Riwaaz by Eshmira is ready. Click here to view and download your bill: ${brandedLink}`;
   },
