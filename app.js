@@ -262,26 +262,32 @@ _For queries: ${CONFIG.phone1}_`;
     );
   },
 
-  buildMagicLinkText: (bill) => {
-    // Generate URL-safe base64
+  buildMagicLinkText: async (bill) => {
     const data = {
       config: { currency: CONFIG.currency, address: CONFIG.address, phone1: CONFIG.phone1, phone2: CONFIG.phone2 },
       ...bill
     };
-    const b64 = btoa(encodeURIComponent(JSON.stringify(data)));
-    const link = `https://riwaaz-website.vercel.app/bill?data=${b64}`;
-    return `Hi! Your bill from Riwaaz by Eshmira is ready. Click here to view and download your bill: ${link}`;
+    // Make base64 perfectly URL-safe so WhatsApp NEVER truncates it
+    let b64 = btoa(encodeURIComponent(JSON.stringify(data)));
+    b64 = b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    
+    const brandedLink = `https://riwaaz-website.vercel.app/bill?data=${b64}`;
+    
+    return `Hi! Your bill from Riwaaz by Eshmira is ready. Click here to view and download your bill: ${brandedLink}`;
   },
 
-  whatsapp: (bill) => {
-    const text = Share.buildMagicLinkText(bill);
+  whatsapp: async (bill) => {
+    const tab = window.open('about:blank', '_blank');
+    tab.document.write('<div style="font-family: sans-serif; text-align: center; padding: 50px;"><h2>⏳ Generating Secure Bill Link...</h2><p>Please wait, opening WhatsApp...</p></div>');
+    
+    const text = await Share.buildMagicLinkText(bill);
     const phone = bill.customer.phone ? '91' + bill.customer.phone.replace(/\D/g,'').slice(-10) : '';
     const url = phone ? `https://wa.me/${phone}?text=${encodeURIComponent(text)}` : `https://wa.me/?text=${encodeURIComponent(text)}`;
-    window.open(url, '_blank');
+    tab.location.href = url;
   },
 
-  sms: (bill) => {
-    const text = Share.buildMagicLinkText(bill);
+  sms: async (bill) => {
+    const text = await Share.buildMagicLinkText(bill);
     const phone = bill.customer.phone ? bill.customer.phone.replace(/\D/g,'').slice(-10) : '';
     const url = `sms:${phone}?body=${encodeURIComponent(text)}`;
     window.location.href = url;
